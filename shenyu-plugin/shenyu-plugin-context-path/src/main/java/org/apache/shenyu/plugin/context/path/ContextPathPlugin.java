@@ -37,6 +37,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 /**
+ * 用于解析出实际uri
  * ContextPath Plugin.
  */
 public class ContextPathPlugin extends AbstractShenyuPlugin {
@@ -60,6 +61,7 @@ public class ContextPathPlugin extends AbstractShenyuPlugin {
             LOG.error("context path rule configuration is null ：{}", rule);
             return chain.execute(exchange);
         }
+        // 获取实际uri
         buildRealURI(shenyuContext, ruleHandle);
         return chain.execute(exchange);
     }
@@ -108,6 +110,7 @@ public class ContextPathPlugin extends AbstractShenyuPlugin {
             if (handle.getAddPrefixed()) {
                 realURI = context.getPath();
             } else {
+                // 截去服务名前缀，获取实际请求uri
                 realURI = context.getPath().substring(contextPath.length());
             }
         }

@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 /**
+ * 结果处理插件
  * this is response plugin.
  */
 public class ResponsePlugin implements ShenyuPlugin {
@@ -48,6 +49,7 @@ public class ResponsePlugin implements ShenyuPlugin {
     public Mono<Void> execute(final ServerWebExchange exchange, final ShenyuPluginChain chain) {
         ShenyuContext shenyuContext = exchange.getAttribute(Constants.CONTEXT);
         assert shenyuContext != null;
+        // 根据RPC类型获取对应消息处理器，返回响应
         return writerMap.get(shenyuContext.getRpcType()).writeWith(exchange, chain);
     }
 

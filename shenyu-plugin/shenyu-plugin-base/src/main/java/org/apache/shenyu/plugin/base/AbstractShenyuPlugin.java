@@ -70,6 +70,8 @@ public abstract class AbstractShenyuPlugin implements ShenyuPlugin {
     protected abstract Mono<Void> doExecute(ServerWebExchange exchange, ShenyuPluginChain chain, SelectorData selector, RuleData rule);
 
     /**
+     * 执行插件责任链抽象逻辑，最后会交由具体插件执行自定义逻辑
+     *
      * Process the Web request and (optionally) delegate to the next
      * {@code ShenyuPlugin} through the given {@link ShenyuPluginChain}.
      *
@@ -80,19 +82,24 @@ public abstract class AbstractShenyuPlugin implements ShenyuPlugin {
     @Override
     public Mono<Void> execute(final ServerWebExchange exchange, final ShenyuPluginChain chain) {
         initMatchCacheConfig();
+        // 根据plugin从缓存中找plugin，这里使用的是ConcurrentMap作为缓存
         final String pluginName = named();
         PluginData pluginData = BaseDataCache.getInstance().obtainPluginData(pluginName);
-        // early exit
+        // early exit plugin不存在或被禁用，结束该plugin继续向下执行责任链
         if (Objects.isNull(pluginData) || !pluginData.getEnabled()) {
             return chain.execute(exchange);
         }
+        // 获取请求路径
         final String path = exchange.getRequest().getURI().getPath();
+        // 从缓存中获取plugin对应的所有选择器
         List<SelectorData> selectors = BaseDataCache.getInstance().obtainSelectorData(pluginName);
+        // 根据path获取对应选择器信息
         SelectorData selectorData = obtainSelectorDataCacheIfEnabled(path);
-        // handle Selector
+        // handle Selector，选择器配置异常，结束处理，继续向下执行责任链
         if (Objects.nonNull(selectorData) && StringUtils.isBlank(selectorData.getId())) {
             return handleSelectorIfNull(pluginName, exchange, chain);
         }
+        // 缓存中没有获取到对应的selectorData，遍历所有选择器进行匹配
         if (Objects.isNull(selectorData)) {
             if (CollectionUtils.isEmpty(selectors)) {
                 return handleSelectorIfNull(pluginName, exchange, chain);
@@ -100,39 +107,48 @@ public abstract class AbstractShenyuPlugin implements ShenyuPlugin {
             Pair<Boolean, SelectorData> matchSelectorData = matchSelector(exchange, selectors);
             selectorData = matchSelectorData.getRight();
             if (Objects.isNull(selectorData)) {
+                // 没有匹配到可用的选择器
                 if (matchCacheConfig.getSelectorEnabled() && matchSelectorData.getLeft()) {
                     selectorData = new SelectorData();
                     selectorData.setPluginName(pluginName);
                     cacheSelectorData(path, selectorData);
                 }
+                // 结束处理，继续向下执行责任链
                 return handleSelectorIfNull(pluginName, exchange, chain);
             } else {
                 if (matchCacheConfig.getSelectorEnabled() && matchSelectorData.getLeft()) {
+                    // 匹配成功，加入缓存
                     cacheSelectorData(path, selectorData);
                 }
             }
         }
         printLog(selectorData, pluginName);
+        // 是否需要继续后继规则处理，选择器为初筛粒度，规则为细粒度，不继续后继选择器则不进行规则处理直接执行
         if (Objects.nonNull(selectorData.getContinued()) && !selectorData.getContinued()) {
             // if continued， not match rules
             return doExecute(exchange, chain, selectorData, defaultRuleData(selectorData));
         }
+        // 从缓存中获取选择器的所有规则配置
         List<RuleData> rules = BaseDataCache.getInstance().obtainRuleData(selectorData.getId());
         if (CollectionUtils.isEmpty(rules)) {
             return handleRuleIfNull(pluginName, exchange, chain);
         }
         RuleData ruleData;
+        // 根据选择器适配的流量类型决定，自定义类型只有在满足选择器配置的条件时才会执行，全流量则必定执行
         if (selectorData.getType() == SelectorTypeEnum.FULL_FLOW.getCode()) {
-            //get last
+            //get last 选取最后一条规则进行匹配
             RuleData rule = rules.get(rules.size() - 1);
             printLog(rule, pluginName);
             return doExecute(exchange, chain, selectorData, rule);
         } else {
             // match path with rule uri condition
+            // 从缓存中根据uri匹配具体规则，这个缓存的结构是一个嵌套的Hash结构，key为url的每一层级
+            // 很奇怪，这里的缓存使用的是Caffeine，而非是上面BaseDataCache中使用的ConcurrentMap
             ShenyuTrieNode matchTrieNode = SpringBeanUtils.getInstance().getBean(ShenyuTrie.class).match(path, selectorData.getId());
             if (Objects.nonNull(matchTrieNode)) {
                 List<RuleData> ruleDataList = matchTrieNode.getPathRuleCache().getIfPresent(selectorData.getId());
                 if (CollectionUtils.isNotEmpty(ruleDataList)) {
+                    // 若存在多条匹配的规则，会任取一条
                     ruleData = genericMatchRule(exchange, ruleDataList);
                 } else {
                     ruleData = genericMatchRule(exchange, rules);
@@ -145,6 +161,7 @@ public abstract class AbstractShenyuPlugin implements ShenyuPlugin {
             }
         }
         printLog(ruleData, pluginName);
+        // 执行选择器内部逻辑
         return doExecute(exchange, chain, selectorData, ruleData);
     }
 

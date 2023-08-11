@@ -79,6 +79,10 @@ public class ShenyuConfiguration {
     private static final Logger LOG = LoggerFactory.getLogger(ShenyuConfiguration.class);
     
     /**
+     * 注入ShenyuWebHandler到Spring容器
+     * ShenyuWebHandler实现了WebHandler接口，作为网关入口(参考spring-web-flux)
+     * 实现了ApplicationListener接口，用于监听插件相关的事件来更新插件责任链
+     *
      * Init ShenyuWebHandler.
      *
      * @param plugins this plugins is All impl ShenyuPlugin.
@@ -87,6 +91,7 @@ public class ShenyuConfiguration {
      */
     @Bean("webHandler")
     public ShenyuWebHandler shenyuWebHandler(final ObjectProvider<List<ShenyuPlugin>> plugins, final ShenyuConfig config) {
+        // 注入插件责任链到ShenyuWebHandler
         List<ShenyuPlugin> pluginList = plugins.getIfAvailable(Collections::emptyList);
         List<ShenyuPlugin> shenyuPlugins = pluginList.stream()
                 .sorted(Comparator.comparingInt(ShenyuPlugin::getOrder)).collect(Collectors.toList());
@@ -95,6 +100,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 在进行路由分发的时候需要用到
      * init dispatch handler.
      *
      * @return {@link DispatcherHandler}.
@@ -105,6 +111,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 注入RpcParamTransformPlugin，用于处理RPC调用参数
      * Param transform plugin.
      *
      * @return the shenyu plugin
@@ -115,6 +122,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 插件相关事件订阅器
      * common plugin data subscriber.
      *
      * @param pluginDataHandlerList the plugin data handler list
@@ -128,6 +136,7 @@ public class ShenyuConfiguration {
     }
 
     /**
+     * 元数据事件订阅器
      * common meta data subscriber.
      *
      * @param metaDataHandlerList the meta data handler list
@@ -139,6 +148,8 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 插件加载器
+     * 内部维护了一个线程池，每300秒扫描一次配置中的扩展插件路径进行插件加载
      * Shenyu loader service.
      *
      * @param shenyuWebHandler the shenyu web handler
@@ -165,6 +176,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 内部接口鉴权用
      * Local dispatcher filter.
      *
      * @param dispatcherHandler the dispatcher handler
@@ -179,6 +191,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 跨域过滤器，用于支持跨域
      * Cross filter.
      * if you application has cross-domain.
      * this is demo.
@@ -196,6 +209,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 文件大小过滤器，用于对上传文件大小进行控制
      * Body web filter.
      *
      * @param shenyuConfig the shenyu config
@@ -209,6 +223,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 路径排除，排除指定的path路径访问，由网关直接返回空结果
      * Exclude filter.
      *
      * @param shenyuConfig the shenyu config
@@ -222,6 +237,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     *
      * fallback filter.
      *
      * @param shenyuConfig the shenyu config
@@ -236,6 +252,7 @@ public class ShenyuConfiguration {
     }
     
     /**
+     * 健康检查
      * Health filter.
      *
      * @param shenyuConfig the shenyu config
@@ -260,6 +277,7 @@ public class ShenyuConfiguration {
     }
 
     /**
+     * 字典缓存
      * shenyu trie config.
      *
      * @param shenyuConfig shenyu trie config
@@ -272,6 +290,7 @@ public class ShenyuConfiguration {
     }
 
     /**
+     * 缓存更新事件监听器，用于更新字典缓存
      * shenyu trie listener.
      *
      * @return ShenyuTrieRuleListener

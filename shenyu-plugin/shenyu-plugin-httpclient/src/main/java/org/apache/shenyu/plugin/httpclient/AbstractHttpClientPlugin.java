@@ -59,6 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * http客户端插件抽象类
  * The type abstract http client plugin.
  */
 public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
@@ -69,22 +70,27 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
     public final Mono<Void> execute(final ServerWebExchange exchange, final ShenyuPluginChain chain) {
         final ShenyuContext shenyuContext = exchange.getAttribute(Constants.CONTEXT);
         assert shenyuContext != null;
+        // 实际请求地址，由 URIPlugin解析存入
         final URI uri = exchange.getAttribute(Constants.HTTP_URI);
         if (Objects.isNull(uri)) {
             Object error = ShenyuResultWrap.error(exchange, ShenyuResultEnum.CANNOT_FIND_URL);
             return WebFluxResultUtils.result(exchange, error);
         }
+        // 获取插件的超时、重试等配置
         final long timeout = (long) Optional.ofNullable(exchange.getAttribute(Constants.HTTP_TIME_OUT)).orElse(3000L);
         final Duration duration = Duration.ofMillis(timeout);
         final int retryTimes = (int) Optional.ofNullable(exchange.getAttribute(Constants.HTTP_RETRY)).orElse(0);
         final String retryStrategy = (String) Optional.ofNullable(exchange.getAttribute(Constants.RETRY_STRATEGY)).orElseGet(RetryEnum.CURRENT::getName);
         LOG.info("The request urlPath is {}, retryTimes is {}, retryStrategy is {}", uri.toASCIIString(), retryTimes, retryStrategy);
         final HttpHeaders httpHeaders = buildHttpHeaders(exchange);
+        // 交由实际请求插件执行请求，如 WebClientPlugin
         final Mono<R> response = doRequest(exchange, exchange.getRequest().getMethodValue(), uri, httpHeaders, exchange.getRequest().getBody())
                 .timeout(duration, Mono.error(new TimeoutException("Response took longer than timeout: " + duration)))
                 .doOnError(e -> LOG.error(e.getMessage(), e));
+        // 规则配置的重试策略为当前机器时
         if (RetryEnum.CURRENT.getName().equals(retryStrategy)) {
             //old version of DividePlugin and SpringCloudPlugin will run on this
+            // 重试条件
             RetryBackoffSpec retryBackoffSpec = Retry.backoff(retryTimes, Duration.ofMillis(20L))
                     .maxBackoff(Duration.ofSeconds(20L))
                     .transientErrors(true)
@@ -94,12 +100,15 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
                     .onRetryExhaustedThrow((retryBackoffSpecErr, retrySignal) -> {
                         throw new ShenyuTimeoutException("Request timeout, the maximum number of retry times has been exceeded");
                     });
+            // 根据重试条件决定是否需要重试
             return response.retryWhen(retryBackoffSpec)
                     .onErrorMap(ShenyuTimeoutException.class, th -> new ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, th.getMessage(), th))
                     .onErrorMap(TimeoutException.class, th -> new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, th.getMessage(), th))
                     .flatMap((Function<Object, Mono<? extends Void>>) o -> chain.execute(exchange));
         }
+        // 重试策略为选择其它机器，排除已调用过的机器
         final Set<URI> exclude = Sets.newHashSet(uri);
+        // 重发请求
         return resend(response, exchange, duration, httpHeaders, exclude, retryTimes)
                 .onErrorMap(ShenyuException.class, th -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                         ShenyuResultEnum.CANNOT_FIND_HEALTHY_UPSTREAM_URL_AFTER_FAILOVER.getMsg(), th))
@@ -130,6 +139,7 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
             final String selectorId = exchange.getAttribute(Constants.DIVIDE_SELECTOR_ID);
             final String loadBalance = exchange.getAttribute(Constants.LOAD_BALANCE);
             //always query the latest available list
+            // 查找该服务没被重试过的剩余可用机器
             final List<Upstream> upstreamList = UpstreamCacheManager.getInstance().findUpstreamListBySelectorId(selectorId)
                     .stream().filter(data -> {
                         final String trimUri = data.getUrl().trim();
@@ -146,14 +156,17 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
                 return Mono.error(new ShenyuException(ShenyuResultEnum.CANNOT_FIND_HEALTHY_UPSTREAM_URL_AFTER_FAILOVER.getMsg()));
             }
             final String ip = Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress();
+            // 根据负载均衡策略选择机器
             final Upstream upstream = LoadBalancerFactory.selector(upstreamList, loadBalance, ip);
             if (Objects.isNull(upstream)) {
                 // no need to retry anymore
                 return Mono.error(new ShenyuException(ShenyuResultEnum.CANNOT_FIND_HEALTHY_UPSTREAM_URL_AFTER_FAILOVER.getMsg()));
             }
+            // 构建新的实际请求uri，并将调用过的机器添加到exclude中
             final URI newUri = RequestUrlUtils.buildRequestUri(exchange, upstream.buildDomain());
             // in order not to affect the next retry call, newUri needs to be excluded
             exclude.add(newUri);
+            // 执行重试
             return doRequest(exchange, exchange.getRequest().getMethodValue(), newUri, httpHeaders, exchange.getRequest().getBody())
                     .timeout(duration, Mono.error(new TimeoutException("Response took longer than timeout: " + duration)))
                     .doOnError(e -> LOG.error(e.getMessage(), e));

@@ -35,6 +35,7 @@ import java.net.URI;
 import java.util.Optional;
 
 /**
+ * Http客户端插件
  * The type Web client plugin.
  */
 public class WebClientPlugin extends AbstractHttpClientPlugin<ClientResponse> {
@@ -56,9 +57,11 @@ public class WebClientPlugin extends AbstractHttpClientPlugin<ClientResponse> {
         // springWebflux5.3 mark #exchange() deprecated. because #echange maybe make memory leak.
         // https://github.com/spring-projects/spring-framework/issues/25751
         // exchange is deprecated, so change to {@link WebClient.RequestHeadersSpec#exchangeToMono(Function)}
+        // 向上游服务发起请求
         return webClient.method(HttpMethod.valueOf(httpMethod)).uri(uri)
                 .headers(headers -> headers.addAll(httpHeaders))
                 .body(BodyInserters.fromDataBuffers(body))
+                // 执行请求并获取响应
                 .exchangeToMono(response -> response.bodyToMono(byte[].class)
                         .flatMap(bytes -> Mono.fromCallable(() -> Optional.ofNullable(bytes))).defaultIfEmpty(Optional.empty())
                         .flatMap(option -> {
@@ -71,6 +74,7 @@ public class WebClientPlugin extends AbstractHttpClientPlugin<ClientResponse> {
                             return Mono.just(builder.build());
                         }))
                 .doOnSuccess(res -> {
+                    // 请求成功，将结果写入Attribute
                     if (res.statusCode().is2xxSuccessful()) {
                         exchange.getAttributes().put(Constants.CLIENT_RESPONSE_RESULT_TYPE, ResultEnum.SUCCESS.getName());
                     } else {

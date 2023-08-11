@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 
 /**
+ * URI插件，用于拼接实际请求地址
  * The type Uri plugin.
  */
 public class URIPlugin implements ShenyuPlugin {
@@ -39,7 +40,9 @@ public class URIPlugin implements ShenyuPlugin {
         if (StringUtils.isBlank(domain)) {
             return chain.execute(exchange);
         }
+        // 将服务地址(ip:port)与路径进行拼接得到最终请求uri
         final URI uri = RequestUrlUtils.buildRequestUri(exchange, domain);
+        // 将实际请求uri存到Attribute中，方便WebClientPlugin获取
         exchange.getAttributes().put(Constants.HTTP_URI, uri);
         return chain.execute(exchange);
     }

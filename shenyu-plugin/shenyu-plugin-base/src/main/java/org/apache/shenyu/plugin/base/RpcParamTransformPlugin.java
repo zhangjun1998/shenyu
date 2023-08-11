@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
+ * 参数转换插件
  * The param transform plugin.
  */
 public class RpcParamTransformPlugin implements ShenyuPlugin {

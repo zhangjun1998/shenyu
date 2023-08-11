@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 /**
+ * 消息处理器
  * The interface Message writer.
  */
 public interface MessageWriter {

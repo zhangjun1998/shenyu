@@ -78,6 +78,8 @@ public final class ResponseUtils {
                 .headers(headers -> headers.putAll(response.getHeaders()))
                 .cookies(cookies -> response.getCookies())
                 .body(Flux.from(body)).build();
+        // 执行以下代码可查看response响应内容
+        // new String(((UnpooledHeapByteBuf) ((NettyDataBuffer) ((FluxJust) ((FluxOnAssembly) body).source).value).byteBuf).array);
     }
     
     /**

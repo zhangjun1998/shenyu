@@ -61,6 +61,7 @@ public class DividePlugin extends AbstractShenyuPlugin {
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final ShenyuPluginChain chain, final SelectorData selector, final RuleData rule) {
         ShenyuContext shenyuContext = exchange.getAttribute(Constants.CONTEXT);
         assert shenyuContext != null;
+        // 从缓存中获取对应的规则处理器
         DivideRuleHandle ruleHandle = buildRuleHandle(rule);
         if (ruleHandle.getHeaderMaxSize() > 0) {
             long headerSize = exchange.getRequest().getHeaders().values()
@@ -81,6 +82,7 @@ public class DividePlugin extends AbstractShenyuPlugin {
                 return WebFluxResultUtils.result(exchange, error);
             }
         }
+        // 根据选择器id找到请求对应发往的上游服务(集群)
         List<Upstream> upstreamList = UpstreamCacheManager.getInstance().findUpstreamListBySelectorId(selector.getId());
         if (CollectionUtils.isEmpty(upstreamList)) {
             LOG.error("divide upstream configuration error： {}", selector);
@@ -88,6 +90,7 @@ public class DividePlugin extends AbstractShenyuPlugin {
             return WebFluxResultUtils.result(exchange, error);
         }
         String ip = Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress();
+        // 根据选择器规则中配置的负载均衡策略定位应该请求的机器
         Upstream upstream = LoadBalancerFactory.selector(upstreamList, ruleHandle.getLoadBalance(), ip);
         if (Objects.isNull(upstream)) {
             LOG.error("divide has no upstream");
@@ -95,16 +98,17 @@ public class DividePlugin extends AbstractShenyuPlugin {
             return WebFluxResultUtils.result(exchange, error);
         }
         // set the http url
+        // 请求头中指定了机器，使用请求头中指定的url
         if (CollectionUtils.isNotEmpty(exchange.getRequest().getHeaders().get(Constants.SPECIFY_DOMAIN))) {
             upstream.setUrl(exchange.getRequest().getHeaders().get(Constants.SPECIFY_DOMAIN).get(0));
         }
-        // set domain
+        // set domain 设置请求地址
         String domain = upstream.buildDomain();
         exchange.getAttributes().put(Constants.HTTP_DOMAIN, domain);
-        // set the http timeout
+        // set the http timeout 设置超时时间和重试次数
         exchange.getAttributes().put(Constants.HTTP_TIME_OUT, ruleHandle.getTimeout());
         exchange.getAttributes().put(Constants.HTTP_RETRY, ruleHandle.getRetry());
-        // set retry strategy stuff
+        // set retry strategy stuff 设置重试策略、负载均衡策略、使用的选择器
         exchange.getAttributes().put(Constants.RETRY_STRATEGY, StringUtils.defaultString(ruleHandle.getRetryStrategy(), RetryEnum.CURRENT.getName()));
         exchange.getAttributes().put(Constants.LOAD_BALANCE, StringUtils.defaultString(ruleHandle.getLoadBalance(), LoadBalanceEnum.RANDOM.getName()));
         exchange.getAttributes().put(Constants.DIVIDE_SELECTOR_ID, selector.getId());

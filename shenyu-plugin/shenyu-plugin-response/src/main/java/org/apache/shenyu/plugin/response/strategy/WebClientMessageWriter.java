@@ -67,13 +67,16 @@ public class WebClientMessageWriter implements MessageWriter {
     public Mono<Void> writeWith(final ServerWebExchange exchange, final ShenyuPluginChain chain) {
         return chain.execute(exchange).then(Mono.defer(() -> {
             ServerHttpResponse response = exchange.getResponse();
+            // 从Attribute中获取请求上游服务的响应
             ClientResponse clientResponse = exchange.getAttribute(Constants.CLIENT_RESPONSE_ATTR);
             if (Objects.isNull(clientResponse)) {
                 Object error = ShenyuResultWrap.error(exchange, ShenyuResultEnum.SERVICE_RESULT_ERROR);
                 return WebFluxResultUtils.result(exchange, error);
             }
+            // 重写响应头，将上游服务返回响应的响应头写入到网关对外的响应中
             this.redrawResponseHeaders(response, clientResponse);
-            // image, pdf or stream does not do format processing.
+            // image, pdf or stream does not do format processing
+            // 返回类型为二进制文件特殊处理
             if (clientResponse.headers().contentType().isPresent()) {
                 final String media = clientResponse.headers().contentType().get().toString().toLowerCase();
                 if (media.matches(COMMON_BIN_MEDIA_TYPE_REGEX)) {
@@ -81,13 +84,19 @@ public class WebClientMessageWriter implements MessageWriter {
                             .doOnCancel(() -> clean(exchange));
                 }
             }
+            // 使用网关对外的响应重建上游服务的响应，主要是添加header和cookie
             clientResponse = ResponseUtils.buildClientResponse(response, clientResponse.body(BodyExtractors.toDataBuffers()));
 
             Mono<Void> responseMono = clientResponse.bodyToMono(byte[].class)
-                    .flatMap(originData -> WebFluxResultUtils.result(exchange, originData))
+                    .flatMap(originData -> {
+                        // 上游服务响应body
+                        System.out.println(new String(originData));
+                        return WebFluxResultUtils.result(exchange, originData);
+                    })
                     .doOnCancel(() -> clean(exchange));
+            // 将响应写入Attribute
             exchange.getAttributes().put(Constants.RESPONSE_MONO, responseMono);
-            // watcher httpStatus
+            // watcher httpStatus 回调一些关注HttpStatus的观察者
             final Consumer<HttpStatus> consumer = exchange.getAttribute(Constants.WATCHER_HTTP_STATUS);
             Optional.ofNullable(consumer).ifPresent(c -> c.accept(response.getStatusCode()));
             return responseMono;
