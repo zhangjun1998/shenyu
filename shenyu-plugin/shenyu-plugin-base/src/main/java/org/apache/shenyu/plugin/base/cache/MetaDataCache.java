@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
+ * 元数据缓存，内部由ConcurrentMap实现
  * The type Meta data cache.
  */
 public final class MetaDataCache {
@@ -45,6 +46,9 @@ public final class MetaDataCache {
      */
     private static final ConcurrentMap<String, MetaData> META_DATA_MAP = Maps.newConcurrentMap();
 
+    /**
+     * path -> MetaData
+     */
     private static final MemorySafeWindowTinyLFUMap<String, MetaData> CACHE = new MemorySafeWindowTinyLFUMap<>(Constants.THE_256_MB, 1 << 16);
 
     /**
@@ -80,6 +84,7 @@ public final class MetaDataCache {
         META_DATA_MAP.put(data.getId(), data);
         final String path = data.getPath();
         clean(path);
+        // 路径不含通配符，缓存到
         if (!path.contains("*")) {
             // only in this condition, we need to init cache
             initCache(path, data, path);

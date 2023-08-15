@@ -28,6 +28,7 @@
     <properties>
         <commons-io.version>2.11.0</commons-io.version>
         <orai18n.version>19.7.0.0</orai18n.version>
+        <eureka-client.version>3.1.2</eureka-client.version>
     </properties>
 
     <dependencies>
@@ -264,6 +265,30 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>org.apache.shenyu</groupId>-->
+<!--            <artifactId>shenyu-spring-boot-starter-plugin-springcloud</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>-->
+<!--            <version>${eureka-client.version}</version>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-commons</artifactId>-->
+<!--            <version>${spring-cloud-commons.version}</version>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.apache.shenyu</groupId>-->
+<!--            <artifactId>shenyu-spring-boot-starter-plugin-httpclient</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
     </dependencies>
     
     <profiles>

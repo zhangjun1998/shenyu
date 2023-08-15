@@ -43,9 +43,13 @@ import java.util.Objects;
 
 /**
  * this is springCloud proxy impl.
+ *
+ * 核心逻辑：将网关和服务都加入到注册中心，这样网关就可以通过注册中心拉取服务实例
+ * 再根据选择器配置选择合适的负载均衡策略即可获得需要调用的实例，根据实例注册的元数据组装 domain+path 发起调用即可
  */
 public class SpringCloudPlugin extends AbstractShenyuPlugin {
 
+    // 服务实例选择器
     private final ShenyuSpringCloudServiceChooser serviceChooser;
     
     private final SpringCloudRuleHandle defaultRuleHandle = new SpringCloudRuleHandle();
@@ -67,22 +71,28 @@ public class SpringCloudPlugin extends AbstractShenyuPlugin {
         }
         final ShenyuContext shenyuContext = exchange.getAttribute(Constants.CONTEXT);
         assert shenyuContext != null;
+        // 选择器的一些元数据，在服务启动时会自动注册选择器，这时会将选择器元数据上传并写入缓存，后续选择器相关的事件也会更新缓存
         final SpringCloudSelectorHandle springCloudSelectorHandle = SpringCloudPluginDataHandler.SELECTOR_CACHED.get().obtainHandle(selector.getId());
+        // 选择器的具体规则
         final SpringCloudRuleHandle ruleHandle = buildRuleHandle(rule);
+        // 从选择器中获取服务id
         String serviceId = springCloudSelectorHandle.getServiceId();
         if (StringUtils.isBlank(serviceId)) {
             Object error = ShenyuResultWrap.error(exchange, ShenyuResultEnum.CANNOT_CONFIG_SPRINGCLOUD_SERVICEID);
             return WebFluxResultUtils.result(exchange, error);
         }
+        // 访问者的ip，用于负载均衡
         final String ip = Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress();
+        // 根据选择器规则配置的负载均衡策略，选择合适的服务实例
         final Upstream upstream = serviceChooser.choose(serviceId, selector.getId(), ip, ruleHandle.getLoadBalance());
         if (Objects.isNull(upstream)) {
             Object error = ShenyuResultWrap.error(exchange, ShenyuResultEnum.SPRINGCLOUD_SERVICEID_IS_ERROR);
             return WebFluxResultUtils.result(exchange, error);
         }
+        // 设置调用地址信息(oip+port)
         final String domain = upstream.buildDomain();
         setDomain(URI.create(domain + shenyuContext.getRealUrl()), exchange);
-        //set time out.
+        //set time out. 设置超时时间，由选择器规则配置
         exchange.getAttributes().put(Constants.HTTP_TIME_OUT, ruleHandle.getTimeout());
         return chain.execute(exchange);
     }

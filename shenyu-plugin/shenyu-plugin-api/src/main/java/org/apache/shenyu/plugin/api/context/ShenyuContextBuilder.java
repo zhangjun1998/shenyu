@@ -25,6 +25,7 @@ import org.springframework.web.server.ServerWebExchange;
 public interface ShenyuContextBuilder {
 
     /**
+     * 构建ShenYuContext，方便后续插件处理
      * Build shenyu context.
      *
      * @param exchange the exchange

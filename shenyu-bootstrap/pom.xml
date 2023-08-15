@@ -295,8 +295,11 @@
             <version>${spring-cloud-commons.version}</version>
         </dependency>
         <!--shenyu springCloud plugin end-->
-
-
+        <dependency>
+            <groupId>org.apache.shenyu</groupId>
+            <artifactId>shenyu-spring-boot-starter-plugin-httpclient</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--shenyu mock plugin start-->
         <dependency>
             <groupId>org.apache.shenyu</groupId>

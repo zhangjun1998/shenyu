@@ -20,11 +20,13 @@ package org.apache.shenyu.sync.data.api;
 import org.apache.shenyu.common.dto.MetaData;
 
 /**
+ * 作为元数据订阅者的角色，将客户端上报的元数据进行处理，网关根据这些元数据才能对请求进行正确的路由和处理
  * The interface Meta data subscriber.
  */
 public interface MetaDataSubscriber {
     
     /**
+     * 处理订阅通知，客户端在注册时就会上报元数据
      * On subscribe.
      *
      * @param metaData the meta data

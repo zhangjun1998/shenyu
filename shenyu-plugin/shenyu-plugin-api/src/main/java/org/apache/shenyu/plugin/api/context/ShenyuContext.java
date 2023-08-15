@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
+ * 上下文，插件责任链中需要用到其携带的数据，由 GlobalPlugin 负责初始化
  * the shenyu context.
  */
 public class ShenyuContext implements Serializable {

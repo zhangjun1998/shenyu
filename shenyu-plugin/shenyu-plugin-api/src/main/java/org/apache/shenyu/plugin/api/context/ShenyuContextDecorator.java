@@ -20,6 +20,7 @@ package org.apache.shenyu.plugin.api.context;
 import org.apache.shenyu.common.dto.MetaData;
 
 /**
+ * 上下文装饰器，用来将原上下文装饰成各个插件需要的上下文
  * The interface shenyu context decorator.
  */
 public interface ShenyuContextDecorator {

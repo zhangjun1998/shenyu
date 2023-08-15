@@ -20,6 +20,7 @@ package org.apache.shenyu.admin;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
+// import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
 /**
  * shenyu admin start.

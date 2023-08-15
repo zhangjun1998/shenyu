@@ -27,7 +27,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * 用于做一些数据的初始化
+ * 用于做一些数据的初始化，方便后续插件责任链的调用
  * The type Global plugin.
  */
 public class GlobalPlugin implements ShenyuPlugin {
@@ -45,9 +45,12 @@ public class GlobalPlugin implements ShenyuPlugin {
     
     @Override
     public Mono<Void> execute(final ServerWebExchange exchange, final ShenyuPluginChain chain) {
-        // 初始化 ShenyuContext
+        // 初始化 ShenyuContext，这里会根据 exchange 携带的request，从缓存中获取对应的元数据
+        // 并设置到 ShenyuContext 中方便插件责任链中后续插件的处理
         ShenyuContext shenyuContext = builder.build(exchange);
+        // 将上下文设置到 exchange 的 Attribute 中
         exchange.getAttributes().put(Constants.CONTEXT, shenyuContext);
+        // 继续执行插件责任链
         return chain.execute(exchange);
     }
     

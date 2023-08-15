@@ -57,30 +57,39 @@ public class DefaultShenyuContextBuilder implements ShenyuContextBuilder {
 
     @Override
     public ShenyuContext build(final ServerWebExchange exchange) {
+        // 根据 exchange 从元数据缓存中获取元数据，key=rpcType，value=MetaData
         Pair<String, MetaData> buildData = buildData(exchange);
+        // 根据 rpcType 从缓存中获取对应的 ShenyuContextDecorator，由插件对应的 ShenyuContextDecorator 对原 Context 进行装饰
         return decoratorMap.get(buildData.getLeft()).decorator(buildDefaultContext(exchange.getRequest()), buildData.getRight());
     }
     
     private Pair<String, MetaData> buildData(final ServerWebExchange exchange) {
+        // 请求头中携带了 rpcType，直接使用请求头数据作为 rpcType
         ServerHttpRequest request = exchange.getRequest();
         HttpHeaders headers = request.getHeaders();
         String rpcType = headers.getFirst(RPC_TYPE);
         if (StringUtils.isNotEmpty(rpcType)) {
             return Pair.of(rpcType, new MetaData());
         }
+        // 请求头中携带 Http 升级 WebSocket 的标识，设置 rpcType 为 WebSocket
         String upgrade = headers.getFirst(UPGRADE);
         if (StringUtils.isNotEmpty(upgrade) && RpcTypeEnum.WEB_SOCKET.getName().equals(upgrade)) {
             return Pair.of(RpcTypeEnum.WEB_SOCKET.getName(), new MetaData());
         }
+        // 根据 path 匹配，从元数据缓存中获取客户端上报的元数据
         MetaData metaData = MetaDataCache.getInstance().obtain(request.getURI().getPath());
         if (Objects.nonNull(metaData) && Boolean.TRUE.equals(metaData.getEnabled())) {
             exchange.getAttributes().put(Constants.META_DATA, metaData);
             return Pair.of(metaData.getRpcType(), metaData);
         } else {
+            // 兜底逻辑，默认 rpcType 为 HTTP
             return Pair.of(RpcTypeEnum.HTTP.getName(), new MetaData());
         }
     }
 
+    /**
+     * 构建基础的 ShenyuContext，再交给装饰器进一步修饰成对应插件需要的上下文
+     */
     private ShenyuContext buildDefaultContext(final ServerHttpRequest request) {
         ShenyuContext shenyuContext = new ShenyuContext();
         String path = request.getURI().getPath();

@@ -22,12 +22,19 @@ import org.apache.shenyu.common.dto.MetaData;
 import org.apache.shenyu.sync.data.api.MetaDataSubscriber;
 
 /**
+ * 元数据缓存
+ *
  * The type Meta data cache subscriber.
  */
 public class MetaDataCacheSubscriber implements MetaDataSubscriber {
-    
+
+    /**
+     * 客户端在进行注册时，会将自身元数据注册到网关，其中包括appName，contextPath，rpcType，serviceName，methodName，parameterTypes等
+     * 网关根据注册的这些元数据就可以在插件责任链中判断插件是否需要处理/跳过该请求，并进行后续处理
+     */
     @Override
     public void onSubscribe(final MetaData metaData) {
+        // 初始化元数据缓存
         MetaDataCache.getInstance().cache(metaData);
     }
     

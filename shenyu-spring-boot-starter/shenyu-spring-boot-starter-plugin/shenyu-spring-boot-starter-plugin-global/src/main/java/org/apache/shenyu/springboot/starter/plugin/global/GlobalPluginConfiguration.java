@@ -55,6 +55,7 @@ public class GlobalPluginConfiguration {
     }
     
     /**
+     * 初始化上下文构造器
      * Shenyu context builder.
      *
      * @param decorators the decorators
@@ -69,6 +70,7 @@ public class GlobalPluginConfiguration {
     }
     
     /**
+     * 元数据订阅者
      * Cache meta data subscriber.
      *
      * @return the meta data subscriber
