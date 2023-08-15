@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
+ * 数据变更事件
  * Data change event.
  *
  * @see DataChangedEventDispatcher

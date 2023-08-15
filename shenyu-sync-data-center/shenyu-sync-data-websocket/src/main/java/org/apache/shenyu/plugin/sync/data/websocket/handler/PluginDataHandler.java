@@ -24,6 +24,7 @@ import org.apache.shenyu.sync.data.api.PluginDataSubscriber;
 import java.util.List;
 
 /**
+ * 插件数据处理器，
  * The type Plugin data handler.
  */
 public class PluginDataHandler extends AbstractDataHandler<PluginData> {
@@ -47,6 +48,7 @@ public class PluginDataHandler extends AbstractDataHandler<PluginData> {
 
     @Override
     protected void doUpdate(final List<PluginData> dataList) {
+        // 遍历所有数据，调用 pluginDataSubscriber 进行订阅处理
         dataList.forEach(pluginDataSubscriber::onSubscribe);
     }
 

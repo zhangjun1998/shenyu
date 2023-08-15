@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 /**
+ * 数据同步配置，根据配置开关注入对应的监听器到 Spring 容器，默认以 WebSocket 方式作为默认的监听器
  * The type Data sync configuration.
  */
 @Configuration

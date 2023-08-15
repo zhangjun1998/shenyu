@@ -20,6 +20,7 @@ package org.apache.shenyu.plugin.base.handler;
 import org.apache.shenyu.common.dto.MetaData;
 
 /**
+ * 元数据处理器
  * The interface meta data handler.
  */
 public interface MetaDataHandler {

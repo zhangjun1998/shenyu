@@ -23,11 +23,13 @@ import org.apache.shenyu.common.dto.RuleData;
 import org.apache.shenyu.common.dto.SelectorData;
 
 /**
+ * 插件数据订阅者
  * The interface Plugin data subscriber.
  */
 public interface PluginDataSubscriber {
     
     /**
+     * 插件数据订阅处理，由具体的数据同步策略在收到消息后直接调用
      * On subscribe.
      *
      * @param pluginData the plugin data
@@ -58,6 +60,7 @@ public interface PluginDataSubscriber {
     }
     
     /**
+     * 选择器订阅处理
      * On selector subscribe.
      *
      * @param selectorData the selector data
@@ -88,6 +91,7 @@ public interface PluginDataSubscriber {
     }
     
     /**
+     * 规则订阅处理
      * On rule subscribe.
      *
      * @param ruleData the rule data

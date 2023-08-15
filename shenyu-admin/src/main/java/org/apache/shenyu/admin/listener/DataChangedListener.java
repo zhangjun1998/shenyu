@@ -27,6 +27,7 @@ import org.apache.shenyu.common.enums.DataEventTypeEnum;
 import java.util.List;
 
 /**
+ * 数据变更监听器接口，同步策略的抽象
  * Event listener, used to send notification of event changes,
  * used to support HTTP, websocket, zookeeper and other event notifications.
  */

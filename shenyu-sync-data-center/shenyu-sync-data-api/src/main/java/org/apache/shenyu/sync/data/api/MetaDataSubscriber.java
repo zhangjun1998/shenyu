@@ -27,6 +27,7 @@ public interface MetaDataSubscriber {
     
     /**
      * 处理订阅通知，客户端在注册时就会上报元数据
+     * 内部会根据 rpcType 获取对应的处理器进行处理
      * On subscribe.
      *
      * @param metaData the meta data

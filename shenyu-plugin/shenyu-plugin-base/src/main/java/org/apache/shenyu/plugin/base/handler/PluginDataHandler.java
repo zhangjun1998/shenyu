@@ -22,11 +22,13 @@ import org.apache.shenyu.common.dto.RuleData;
 import org.apache.shenyu.common.dto.SelectorData;
 
 /**
+ * 插件数据处理器
  * The interface Plugin data handler.
  */
 public interface PluginDataHandler {
     
     /**
+     * 插件处理
      * Handler plugin.
      *
      * @param pluginData the plugin data
@@ -43,6 +45,7 @@ public interface PluginDataHandler {
     }
     
     /**
+     * 选择器处理
      * Handler selector.
      *
      * @param selectorData the selector data
@@ -59,6 +62,7 @@ public interface PluginDataHandler {
     }
     
     /**
+     * 规则处理
      * Handler rule.
      *
      * @param ruleData the rule data

@@ -53,6 +53,7 @@ public class WebsocketSyncDataService implements SyncDataService {
     private final List<ShenyuWebsocketClient> clients = new ArrayList<>();
     
     /**
+     * 实例化 WebSocket 数据同步服务
      * Instantiates a new Websocket sync cache.
      *
      * @param websocketConfig      the websocket config
@@ -64,11 +65,14 @@ public class WebsocketSyncDataService implements SyncDataService {
                                     final PluginDataSubscriber pluginDataSubscriber,
                                     final List<MetaDataSubscriber> metaDataSubscribers,
                                     final List<AuthDataSubscriber> authDataSubscribers) {
+        // 根据网关配置中的 WebSocket url，与所有管理后台节点建立连接
         String[] urls = StringUtils.split(websocketConfig.getUrls(), ",");
         for (String url : urls) {
             try {
+                // 是否允许跨域
                 if (StringUtils.isNotEmpty(websocketConfig.getAllowOrigin())) {
                     Map<String, String> headers = ImmutableMap.of(ORIGIN_HEADER_NAME, websocketConfig.getAllowOrigin());
+                    // 创建 WebSocket 客户端并添加到 clients
                     clients.add(new ShenyuWebsocketClient(new URI(url), headers, Objects.requireNonNull(pluginDataSubscriber), metaDataSubscribers, authDataSubscribers));
                 } else {
                     clients.add(new ShenyuWebsocketClient(new URI(url), Objects.requireNonNull(pluginDataSubscriber), metaDataSubscribers, authDataSubscribers));

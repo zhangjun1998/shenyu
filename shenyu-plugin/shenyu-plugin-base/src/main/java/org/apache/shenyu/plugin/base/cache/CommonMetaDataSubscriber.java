@@ -28,10 +28,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
+ * 通用元数据订阅者，按照 rpcType 调用对应的元数据处理器处理
  * The type common meta data subscriber.
  */
 public class CommonMetaDataSubscriber implements MetaDataSubscriber {
 
+    // 元数据处理器Map，key=rpcType
     private final Map<String, MetaDataHandler> handlerMap;
 
     /**

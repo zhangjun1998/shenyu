@@ -23,6 +23,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.shenyu.common.enums.DataEventTypeEnum;
 
 /**
+ * 数据处理器抽象类
  * The type Abstract data handler.
  *
  * @param <T> the type parameter
@@ -58,14 +59,19 @@ public abstract class AbstractDataHandler<T> implements DataHandler {
      */
     protected abstract void doDelete(List<T> dataList);
 
+    /**
+     * 数据处理模板方法
+     */
     @Override
     public void handle(final String json, final String eventType) {
+        // 将消息携带的源数据转换为插件对应的数据类型
         List<T> dataList = convert(json);
 
         if (CollectionUtils.isEmpty(dataList)) {
             return;
         }
 
+        // 根据事件类型进行对应处理
         DataEventTypeEnum eventTypeEnum = DataEventTypeEnum.acquireByName(eventType);
         switch (eventTypeEnum) {
             case REFRESH:

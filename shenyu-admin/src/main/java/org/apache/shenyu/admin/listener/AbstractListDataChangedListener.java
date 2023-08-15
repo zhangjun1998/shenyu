@@ -42,12 +42,16 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
+ * DataChangedListener 的其中一个抽象实现类，Consul 和 Nacos 会继承此类
  * AbstractNodeDataChangedListener.
  */
 public abstract class AbstractListDataChangedListener implements DataChangedListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractListDataChangedListener.class);
 
+    /**
+     * 插件数据缓存
+     */
     private static final ConcurrentMap<String, PluginData> PLUGIN_MAP = Maps.newConcurrentMap();
 
     private static final ConcurrentMap<String, List<SelectorData>> SELECTOR_MAP = Maps.newConcurrentMap();
@@ -99,6 +103,7 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
 
     @Override
     public void onPluginChanged(final List<PluginData> changed, final DataEventTypeEnum eventType) {
+        // 更新 PLUGIN_MAP
         updatePluginMap(getConfig(changeData.getPluginDataId()));
         switch (eventType) {
             case DELETE:
@@ -117,6 +122,7 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
                 changed.forEach(plugin -> PLUGIN_MAP.put(plugin.getName(), plugin));
                 break;
         }
+        // 发布配置到Nacos
         publishConfig(changeData.getPluginDataId(), PLUGIN_MAP);
         LOG.debug("[DataChangedListener] PluginChanged {}", changeData.getPluginDataId());
     }

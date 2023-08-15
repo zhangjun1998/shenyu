@@ -51,10 +51,15 @@ public class NacosSyncDataService extends NacosCacheHandler implements SyncDataS
      * Start.
      */
     public void start() {
+        // 插件配置监听
         watcherData(NacosPathConstants.PLUGIN_DATA_ID, this::updatePluginMap);
+        // 选择器配置监听
         watcherData(NacosPathConstants.SELECTOR_DATA_ID, this::updateSelectorMap);
+        // 规则配置监听
         watcherData(NacosPathConstants.RULE_DATA_ID, this::updateRuleMap);
+        // 元数据配置监听
         watcherData(NacosPathConstants.META_DATA_ID, this::updateMetaDataMap);
+        // 认证数据监听
         watcherData(NacosPathConstants.AUTH_DATA_ID, this::updateAuthMap);
     }
 

@@ -167,12 +167,14 @@ public class SelectorServiceImpl implements SelectorService {
     
     @Override
     public int update(final SelectorDTO selectorDTO) {
+        // 更新DB数据
         final SelectorDO before = selectorMapper.selectById(selectorDTO.getId());
         SelectorDO selectorDO = SelectorDO.buildSelectorDO(selectorDTO);
         final int selectorCount = selectorMapper.updateSelective(selectorDO);
-        //delete rule condition then add
+        //delete rule condition then add 重新添加选择器条件
         selectorConditionMapper.deleteByQuery(new SelectorConditionQuery(selectorDO.getId()));
         createCondition(selectorDO.getId(), selectorDTO.getSelectorConditions());
+        // 发布数据更新事件
         publishEvent(selectorDO, selectorDTO.getSelectorConditions());
         if (selectorCount > 0) {
             selectorEventPublisher.onUpdated(selectorDO, before);
@@ -310,7 +312,7 @@ public class SelectorServiceImpl implements SelectorService {
     private void publishEvent(final SelectorDO selectorDO, final List<SelectorConditionDTO> selectorConditions) {
         PluginDO pluginDO = pluginMapper.selectById(selectorDO.getPluginId());
         List<ConditionData> conditionDataList = ListUtil.map(selectorConditions, ConditionTransfer.INSTANCE::mapToSelectorDTO);
-        // publish change event.
+        // publish change event. 发布数据更新事件 DataChangedEvent
         eventPublisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.SELECTOR, DataEventTypeEnum.UPDATE,
                 Collections.singletonList(SelectorDO.transFrom(selectorDO, pluginDO.getName(), conditionDataList))));
     }

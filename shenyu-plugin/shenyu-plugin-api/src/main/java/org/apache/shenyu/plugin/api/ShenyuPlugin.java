@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 /**
+ * 插件接口，不需要进行流量匹配的插件可以直接实现此接口，不需要继承 AbstractShenyuPlugin 抽象类
  * the shenyu plugin interface.
  */
 public interface ShenyuPlugin {

@@ -109,6 +109,7 @@ public class SelectorController implements PagedController<SelectorQueryConditio
     }
     
     /**
+     * 以管理后台更新选择器作为管理后台->网关数据同步的分析入口，只分析 WebSocket 同步方式
      * update Selector.
      *
      * @param id          primary key.

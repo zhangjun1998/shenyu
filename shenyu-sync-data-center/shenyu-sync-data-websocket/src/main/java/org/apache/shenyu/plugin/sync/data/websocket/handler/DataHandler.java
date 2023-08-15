@@ -18,12 +18,14 @@
 package org.apache.shenyu.plugin.sync.data.websocket.handler;
 
 /**
+ * 数据处理器策略接口
  * The interface Data handler.
  *
  */
 public interface DataHandler {
 
     /**
+     * 处理流程模板由抽象类实现
      * Handle.
      *
      * @param json  the data for json

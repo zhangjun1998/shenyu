@@ -62,6 +62,7 @@ public interface SelectorService extends PageService<SelectorQueryCondition, Sel
      * @return rows int
      */
     default int createOrUpdate(SelectorDTO selectorDTO) {
+        // 自定义流量类型的选择器需要做一些额外的校验
         if (Objects.equals(SelectorTypeEnum.CUSTOM_FLOW.getCode(), selectorDTO.getType())) {
             Assert.notNull(selectorDTO.getMatchMode(), "if type is custom, matchMode is not null");
             Assert.notEmpty(selectorDTO.getSelectorConditions(), "if type is custom, selectorConditions is not empty");
@@ -71,6 +72,7 @@ public interface SelectorService extends PageService<SelectorQueryCondition, Sel
                 Assert.notBlack(selectorConditionDTO.getParamValue(), "if type is custom, paramValue is not empty");
             });
         }
+        // 创建/更新选择器，这里分析更新吧
         return StringUtils.isEmpty(selectorDTO.getId()) ? create(selectorDTO) : update(selectorDTO);
     }
     
@@ -89,6 +91,7 @@ public interface SelectorService extends PageService<SelectorQueryCondition, Sel
     int create(SelectorDTO selectorDTO);
     
     /**
+     * 管理后台更新选择器
      * update selector.
      *
      * @param selectorDTO {@linkplain SelectorDTO}

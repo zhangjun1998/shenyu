@@ -82,10 +82,15 @@ public class NacosCacheHandler {
         return this.configService;
     }
 
+    /**
+     * 插件数据监听处理方法
+     */
     protected void updatePluginMap(final String configInfo) {
         try {
+            // 将 Nacos 配置反序列化为 List<PluginData>
             // Fix bug #656(https://github.com/apache/shenyu/issues/656)
             List<PluginData> pluginDataList = new ArrayList<>(GsonUtils.getInstance().toObjectMap(configInfo, PluginData.class).values());
+            // 调用订阅者执行相关数据处理逻辑，交给 CommonPluginDataSubscriber 处理
             pluginDataList.forEach(pluginData -> Optional.ofNullable(pluginDataSubscriber).ifPresent(subscriber -> {
                 subscriber.unSubscribe(pluginData);
                 subscriber.onSubscribe(pluginData);
@@ -95,6 +100,9 @@ public class NacosCacheHandler {
         }
     }
 
+    /**
+     * 选择器数据监听处理方法
+     */
     protected void updateSelectorMap(final String configInfo) {
         try {
             List<SelectorData> selectorDataList = GsonUtils.getInstance().toObjectMapList(configInfo, SelectorData.class).values().stream().flatMap(Collection::stream).collect(Collectors.toList());
@@ -107,6 +115,9 @@ public class NacosCacheHandler {
         }
     }
 
+    /**
+     * 选择器规则数据监听处理方法
+     */
     protected void updateRuleMap(final String configInfo) {
         try {
             List<RuleData> ruleDataList = GsonUtils.getInstance().toObjectMapList(configInfo, RuleData.class).values()
@@ -121,6 +132,9 @@ public class NacosCacheHandler {
         }
     }
 
+    /**
+     * 元数据监听处理方法
+     */
     protected void updateMetaDataMap(final String configInfo) {
         try {
             List<MetaData> metaDataList = new ArrayList<>(GsonUtils.getInstance().toObjectMap(configInfo, MetaData.class).values());
@@ -133,6 +147,9 @@ public class NacosCacheHandler {
         }
     }
 
+    /**
+     * 认证数据监听处理方法
+     */
     protected void updateAuthMap(final String configInfo) {
         try {
             List<AppAuthData> appAuthDataList = new ArrayList<>(GsonUtils.getInstance().toObjectMap(configInfo, AppAuthData.class).values());

@@ -48,6 +48,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
+ * 插件抽象类，需要进行流量匹配的插件继承此类
  * abstract shenyu plugin please extends.
  */
 public abstract class AbstractShenyuPlugin implements ShenyuPlugin {

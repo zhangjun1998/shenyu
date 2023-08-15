@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * 数据变更事件分发器
  * Event forwarders, which forward the changed events to each ConfigEventListener.
  */
 @Component
@@ -41,30 +42,41 @@ public class DataChangedEventDispatcher implements ApplicationListener<DataChang
 
     private final ApplicationContext applicationContext;
 
+    // 不同实现方式的监听器，如 Nacos、HTTP、WebSocket
     private List<DataChangedListener> listeners;
 
     public DataChangedEventDispatcher(final ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
+    /**
+     * 根据事件分组将事件分发给监听器
+     */
     @Override
     @SuppressWarnings("unchecked")
     public void onApplicationEvent(final DataChangedEvent event) {
+        // 遍历所有实现方式的监听器
         for (DataChangedListener listener : listeners) {
             switch (event.getGroupKey()) {
+                // 认证事件
                 case APP_AUTH:
                     listener.onAppAuthChanged((List<AppAuthData>) event.getSource(), event.getEventType());
                     break;
+                // 插件事件
                 case PLUGIN:
                     listener.onPluginChanged((List<PluginData>) event.getSource(), event.getEventType());
                     break;
+                // 规则事件
                 case RULE:
                     listener.onRuleChanged((List<RuleData>) event.getSource(), event.getEventType());
                     break;
+                // 选择器事件
                 case SELECTOR:
+                    // 发布选择器更新事件
                     listener.onSelectorChanged((List<SelectorData>) event.getSource(), event.getEventType());
                     applicationContext.getBean(LoadServiceDocEntry.class).loadDocOnSelectorChanged((List<SelectorData>) event.getSource(), event.getEventType());
                     break;
+                // 元数据事件
                 case META_DATA:
                     listener.onMetaDataChanged((List<MetaData>) event.getSource(), event.getEventType());
                     break;
@@ -76,6 +88,7 @@ public class DataChangedEventDispatcher implements ApplicationListener<DataChang
 
     @Override
     public void afterPropertiesSet() {
+        // 注入监听器策略实现
         Collection<DataChangedListener> listenerBeans = applicationContext.getBeansOfType(DataChangedListener.class).values();
         this.listeners = Collections.unmodifiableList(new ArrayList<>(listenerBeans));
     }

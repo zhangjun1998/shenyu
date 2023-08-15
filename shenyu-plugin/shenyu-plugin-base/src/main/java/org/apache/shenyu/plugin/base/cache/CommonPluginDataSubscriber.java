@@ -162,16 +162,20 @@ public class CommonPluginDataSubscriber implements PluginDataSubscriber {
     }
     
     private <T> void subscribeDataHandler(final T classData, final DataEventTypeEnum dataType) {
+        // 更新类型事件
         if (dataType == DataEventTypeEnum.UPDATE) {
-            Optional.ofNullable(classData)
-                    .ifPresent(data -> updateCacheData(classData));
-        } else if (dataType == DataEventTypeEnum.DELETE) {
-            Optional.ofNullable(classData)
-                    .ifPresent(data -> removeCacheData(classData));
+            // 更新插件数据缓存
+            Optional.ofNullable(classData).ifPresent(data -> updateCacheData(classData));
+        }
+        // 删除类型事件
+        else if (dataType == DataEventTypeEnum.DELETE) {
+            // 删除插件数据缓存
+            Optional.ofNullable(classData).ifPresent(data -> removeCacheData(classData));
         }
     }
     
     /**
+     * 更新插件数据缓存
      * update cache data.
      *
      * @param data data is plugin mate data, data is not null
@@ -181,13 +185,14 @@ public class CommonPluginDataSubscriber implements PluginDataSubscriber {
         if (data instanceof PluginData) {
             PluginData pluginData = (PluginData) data;
             final PluginData oldPluginData = BaseDataCache.getInstance().obtainPluginData(pluginData.getName());
+            // 更新缓存
             BaseDataCache.getInstance().cachePluginData(pluginData);
-            Optional.ofNullable(handlerMap.get(pluginData.getName()))
-                    .ifPresent(handler -> handler.handlerPlugin(pluginData));
+            // 调用插件处理器处理插件消息，这里取决于插件是否有自己的处理逻辑
+            Optional.ofNullable(handlerMap.get(pluginData.getName())).ifPresent(handler -> handler.handlerPlugin(pluginData));
 
             // update enabled plugins
-            PluginHandlerEventEnum state = Boolean.TRUE.equals(pluginData.getEnabled())
-                    ? PluginHandlerEventEnum.ENABLED : PluginHandlerEventEnum.DISABLED;
+            PluginHandlerEventEnum state = Boolean.TRUE.equals(pluginData.getEnabled()) ? PluginHandlerEventEnum.ENABLED : PluginHandlerEventEnum.DISABLED;
+            // 发布 PluginHandlerEvent 事件，ShenyuWebHandler 会进行监听来判断是否需要对内部插件责任链执行添加/移除/更改排序等操作
             eventPublisher.publishEvent(new PluginHandlerEvent(state, pluginData));
 
             // sorted plugin

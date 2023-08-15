@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
+ * 配置分组枚举
  * configuration group.
  *
  */

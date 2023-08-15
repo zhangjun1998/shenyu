@@ -82,6 +82,7 @@ public class ShenyuConfiguration {
      * 注入ShenyuWebHandler到Spring容器
      * ShenyuWebHandler实现了WebHandler接口，作为网关入口(参考spring-web-flux)
      * 实现了ApplicationListener接口，用于监听插件相关的事件来更新插件责任链
+     * ObjectProvider 很有意思，可以借鉴使用防止没有可用对象时注入失败
      *
      * Init ShenyuWebHandler.
      *
@@ -148,8 +149,8 @@ public class ShenyuConfiguration {
     }
     
     /**
-     * 插件加载器
-     * 内部维护了一个线程池，每300秒扫描一次配置中的扩展插件路径进行插件加载
+     * 类加载服务
+     * 内部维护了一个线程池，每300秒扫描一次配置中的扩展插件路径，调用自定义类加载器加载路径下的插件jar
      * Shenyu loader service.
      *
      * @param shenyuWebHandler the shenyu web handler

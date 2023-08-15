@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 /**
+ * 基于Nacos同步数据
  * Use nacos to push data changes.
  */
 public class NacosDataChangedListener extends AbstractListDataChangedListener {
@@ -45,6 +46,7 @@ public class NacosDataChangedListener extends AbstractListDataChangedListener {
 
     @Override
     public void publishConfig(final String dataId, final Object data) {
+        // 序列化所有插件数据为 Json 格式发布配置到 Nacos
         try {
             configService.publishConfig(
                     dataId, 

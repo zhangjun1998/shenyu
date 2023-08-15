@@ -51,6 +51,7 @@ public class NacosSyncDataConfiguration {
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosSyncDataConfiguration.class);
 
     /**
+     * Nacos 数据同步服务
      * Nacos sync data service.
      *
      * @param configService     the config service
@@ -68,6 +69,7 @@ public class NacosSyncDataConfiguration {
     }
 
     /**
+     * Nacos 配置服务
      * Nacos config service.
      *
      * @param nacosConfig the nacos config

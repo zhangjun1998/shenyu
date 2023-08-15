@@ -30,6 +30,7 @@ import org.apache.shenyu.common.enums.DataEventTypeEnum;
 import org.apache.shenyu.common.utils.GsonUtils;
 
 /**
+ * WebSocket 数据变更事件监听器
  * The type Websocket data changed listener.
  *
  * @since 2.0.0
@@ -43,10 +44,15 @@ public class WebsocketDataChangedListener implements DataChangedListener {
         WebsocketCollector.send(GsonUtils.getInstance().toJson(websocketData), eventType);
     }
 
+    /**
+     * 选择器变更事件监听
+     */
     @Override
     public void onSelectorChanged(final List<SelectorData> selectorDataList, final DataEventTypeEnum eventType) {
+        // 构建WebSocket消息
         WebsocketData<SelectorData> websocketData =
                 new WebsocketData<>(ConfigGroupEnum.SELECTOR.name(), eventType.name(), selectorDataList);
+        // 通过WebSocket发送事件变更消息
         WebsocketCollector.send(GsonUtils.getInstance().toJson(websocketData), eventType);
     }
 

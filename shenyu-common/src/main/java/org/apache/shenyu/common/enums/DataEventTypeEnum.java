@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
+ * 事件类型枚举
  * The enum Data event type.
  */
 public enum DataEventTypeEnum {

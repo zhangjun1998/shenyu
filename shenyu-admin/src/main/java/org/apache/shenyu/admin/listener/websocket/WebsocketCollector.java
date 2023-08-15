@@ -48,12 +48,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class WebsocketCollector {
     
     private static final Logger LOG = LoggerFactory.getLogger(WebsocketCollector.class);
-    
+
+    // WebSocket连接会话集合
     private static final Set<Session> SESSION_SET = new CopyOnWriteArraySet<>();
     
     private static final String SESSION_KEY = "sessionKey";
     
     /**
+     * 接收网关向管理后台发起的WebSocket连接
      * On open.
      *
      * @param session the session
@@ -121,6 +123,7 @@ public class WebsocketCollector {
     }
     
     /**
+     * WebSocket消息发送
      * Send.
      *
      * @param message the message
@@ -137,6 +140,7 @@ public class WebsocketCollector {
                 sendMessageBySession(session, message);
             }
         } else {
+            // 遍历所有 WebSocket 连接发送
             SESSION_SET.forEach(session -> sendMessageBySession(session, message));
         }
         

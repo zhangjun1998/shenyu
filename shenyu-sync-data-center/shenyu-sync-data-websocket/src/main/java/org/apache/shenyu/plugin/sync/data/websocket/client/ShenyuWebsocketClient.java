@@ -50,7 +50,8 @@ public final class ShenyuWebsocketClient extends WebSocketClient {
     private static final Logger LOG = LoggerFactory.getLogger(ShenyuWebsocketClient.class);
     
     private volatile boolean alreadySync = Boolean.FALSE;
-    
+
+    // WebSocket 消息处理器
     private final WebsocketDataHandler websocketDataHandler;
     
     private final Timer timer;
@@ -76,6 +77,8 @@ public final class ShenyuWebsocketClient extends WebSocketClient {
     }
 
     /**
+     * 实例化一个WebSocket客户端
+     *
      * Instantiates a new shenyu websocket client.
      * @param serverUri the server uri
      * @param headers the headers
@@ -88,13 +91,16 @@ public final class ShenyuWebsocketClient extends WebSocketClient {
                                  final List<MetaDataSubscriber> metaDataSubscribers,
                                  final List<AuthDataSubscriber> authDataSubscribers) {
         super(serverUri, headers);
+        // 创建 WebsocketDataHandler 数据处理器
         this.websocketDataHandler = new WebsocketDataHandler(pluginDataSubscriber, metaDataSubscribers, authDataSubscribers);
         this.timer = WheelTimerFactory.getSharedTimer();
+        // 建立连接
         this.connection();
     }
 
     private void connection() {
         this.connectBlocking();
+        // 心跳线程
         this.timer.add(timerTask = new AbstractRoundTask(null, TimeUnit.SECONDS.toMillis(10)) {
             @Override
             public void doRun(final String key, final TimerTask timerTask) {
@@ -126,7 +132,10 @@ public final class ShenyuWebsocketClient extends WebSocketClient {
             alreadySync = true;
         }
     }
-    
+
+    /**
+     * 处理管理后台发送的数据同步消息
+     */
     @Override
     public void onMessage(final String result) {
         handleResult(result);
@@ -171,13 +180,18 @@ public final class ShenyuWebsocketClient extends WebSocketClient {
             LOG.error("websocket connect is error :{}", e.getMessage());
         }
     }
-    
+
     private void handleResult(final String result) {
         LOG.info("handleResult({})", result);
+        // 反序列化同步消息
         WebsocketData<?> websocketData = GsonUtils.getInstance().fromJson(result, WebsocketData.class);
+        // 配置分组枚举
         ConfigGroupEnum groupEnum = ConfigGroupEnum.acquireByName(websocketData.getGroupType());
+        // 事件类型
         String eventType = websocketData.getEventType();
+        // 消息源数据
         String json = GsonUtils.getInstance().toJson(websocketData.getData());
+        // 交由 WebsocketDataHandler 处理
         websocketDataHandler.executor(groupEnum, json, eventType);
     }
 }

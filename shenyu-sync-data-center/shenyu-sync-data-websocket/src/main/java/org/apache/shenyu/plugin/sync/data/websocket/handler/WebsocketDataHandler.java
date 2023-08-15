@@ -25,6 +25,7 @@ import org.apache.shenyu.sync.data.api.MetaDataSubscriber;
 import org.apache.shenyu.sync.data.api.PluginDataSubscriber;
 
 /**
+ * WebSocket 消息处理器
  * The type Websocket cache handler.
  */
 public class WebsocketDataHandler {
@@ -41,14 +42,20 @@ public class WebsocketDataHandler {
     public WebsocketDataHandler(final PluginDataSubscriber pluginDataSubscriber,
                                 final List<MetaDataSubscriber> metaDataSubscribers,
                                 final List<AuthDataSubscriber> authDataSubscribers) {
+        // 插件数据处理器
         ENUM_MAP.put(ConfigGroupEnum.PLUGIN, new PluginDataHandler(pluginDataSubscriber));
+        // 选择器数据处理器
         ENUM_MAP.put(ConfigGroupEnum.SELECTOR, new SelectorDataHandler(pluginDataSubscriber));
+        // 规则数据处理器
         ENUM_MAP.put(ConfigGroupEnum.RULE, new RuleDataHandler(pluginDataSubscriber));
+        // 认证数据处理器
         ENUM_MAP.put(ConfigGroupEnum.APP_AUTH, new AuthDataHandler(authDataSubscribers));
+        // 元数据处理器
         ENUM_MAP.put(ConfigGroupEnum.META_DATA, new MetaDataHandler(metaDataSubscribers));
     }
 
     /**
+     * 消息处理
      * Executor.
      *
      * @param type      the type
@@ -56,6 +63,7 @@ public class WebsocketDataHandler {
      * @param eventType the event type
      */
     public void executor(final ConfigGroupEnum type, final String json, final String eventType) {
+        // 根据配置类型获取对应的数据订阅者进行处理
         ENUM_MAP.get(type).handle(json, eventType);
     }
 }

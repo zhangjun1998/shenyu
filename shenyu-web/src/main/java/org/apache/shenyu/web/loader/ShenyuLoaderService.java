@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
+ * 类加载服务
  * The type Shenyu loader service.
  */
 public class ShenyuLoaderService {
@@ -60,7 +61,7 @@ public class ShenyuLoaderService {
         this.shenyuConfig = shenyuConfig;
         ExtPlugin config = shenyuConfig.getExtPlugin();
         if (config.getEnabled()) {
-            // 线程池，多线程定时扫描加载指定路径下的插件
+            // 线程池，默认单线程定时扫描加载指定路径下的插件
             ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(config.getThreads(), ShenyuThreadFactory.create("plugin-ext-loader", true));
             executor.scheduleAtFixedRate(this::loaderExtPlugins, config.getScheduleDelay(), config.getScheduleTime(), TimeUnit.SECONDS);
         }
@@ -71,13 +72,18 @@ public class ShenyuLoaderService {
      */
     private void loaderExtPlugins() {
         try {
+            // 加载扩展插件并获取加载结果
             List<ShenyuLoaderResult> results = ShenyuPluginLoader.getInstance().loadExtendPlugins(shenyuConfig.getExtPlugin().getPath());
             if (CollectionUtils.isEmpty(results)) {
                 return;
             }
+            // 加载的扩展插件列表
             List<ShenyuPlugin> shenyuExtendPlugins = results.stream().map(ShenyuLoaderResult::getShenyuPlugin).filter(Objects::nonNull).collect(Collectors.toList());
+            // 将扩展插件添加到 ShenyuWebHandler 中
             webHandler.putExtPlugins(shenyuExtendPlugins);
+            // 加载的扩展插件处理器
             List<PluginDataHandler> handlers = results.stream().map(ShenyuLoaderResult::getPluginDataHandler).filter(Objects::nonNull).collect(Collectors.toList());
+            // 将扩展插件处理器添加到 CommonPluginDataSubscriber 中
             subscriber.putExtendPluginDataHandler(handlers);
         } catch (Exception e) {
             LOG.error("shenyu ext plugins load has error ", e);
