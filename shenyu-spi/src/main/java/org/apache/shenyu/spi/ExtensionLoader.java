@@ -37,6 +37,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
+ * SPI扩展加载器
+ * 示例如下：
+ * SPI接口：{@link org.apache.shenyu.register.client.server.api.ShenyuClientServerRegisterRepository}
+ * 配置文件：{@see shenyu-register-center/shenyu-register-client-server/shenyu-register-client-server-zookeeper/src/main/resources/META-INF/shenyu/org.apache.shenyu.register.client.server.api.ShenyuClientServerRegisterRepository}
+ *
  * The type Extension loader.
  * This is done by loading the properties file.
  *
@@ -47,19 +52,40 @@ import java.util.stream.Collectors;
 public final class ExtensionLoader<T> {
     
     private static final Logger LOG = LoggerFactory.getLogger(ExtensionLoader.class);
-    
+
+    /**
+     * SPI配置文件位置
+     */
     private static final String SHENYU_DIRECTORY = "META-INF/shenyu/";
-    
+
+    /**
+     * SPI扩展加载器实例缓存，静态变量所有实例全局共享，实现缓存，线程安全
+     */
     private static final Map<Class<?>, ExtensionLoader<?>> LOADERS = new ConcurrentHashMap<>();
-    
+
+    /**
+     * SPI注解标记的接口类型
+     */
     private final Class<T> clazz;
-    
+
+    /**
+     * 类加载器实例
+     */
     private final ClassLoader classLoader;
-    
+
+    /**
+     * 已加载的实现类信息，key=SPI配置文件下的类别名，value=别名对应的类信息
+     */
     private final Holder<Map<String, ClassEntity>> cachedClasses = new Holder<>();
-    
+
+    /**
+     * 已加载的类实例信息，key=SPI配置文件下的类别名，value=类实例
+     */
     private final Map<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
-    
+
+    /**
+     * 类实例缓存，key=Clazz，value=Instance
+     */
     private final Map<Class<?>, Object> joinInstances = new ConcurrentHashMap<>();
     
     private String cachedDefaultName;
@@ -69,6 +95,7 @@ public final class ExtensionLoader<T> {
     private final Comparator<ClassEntity> classEntityComparator = Comparator.comparing(ClassEntity::getOrder);
     
     /**
+     * 私有构造器，不允许直接调用构造方法创建，只能通过静态方法获取实例
      * Instantiates a new Extension loader.
      *
      * @param clazz the clazz.
@@ -82,6 +109,7 @@ public final class ExtensionLoader<T> {
     }
     
     /**
+     * 对外暴露静态方法，获取SPI扩展加载器的实例对象
      * Gets extension loader.
      *
      * @param <T>   the type parameter
@@ -90,24 +118,26 @@ public final class ExtensionLoader<T> {
      * @return the extension loader.
      */
     public static <T> ExtensionLoader<T> getExtensionLoader(final Class<T> clazz, final ClassLoader cl) {
-        
+        // 前置校验，判断需要加载的clazz是否为SPI注解标识的接口
         Objects.requireNonNull(clazz, "extension clazz is null");
-        
         if (!clazz.isInterface()) {
             throw new IllegalArgumentException("extension clazz (" + clazz + ") is not interface!");
         }
         if (!clazz.isAnnotationPresent(SPI.class)) {
             throw new IllegalArgumentException("extension clazz (" + clazz + ") without @" + SPI.class + " Annotation");
         }
+        // 从缓存中获取SPI扩展类加载器
         ExtensionLoader<T> extensionLoader = (ExtensionLoader<T>) LOADERS.get(clazz);
         if (Objects.nonNull(extensionLoader)) {
             return extensionLoader;
         }
+        // 缓存中不存在，创建并放入缓存
         LOADERS.putIfAbsent(clazz, new ExtensionLoader<>(clazz, cl));
         return (ExtensionLoader<T>) LOADERS.get(clazz);
     }
     
     /**
+     * 对外暴露静态方法，获取SPI扩展加载器的实例对象，使用 ExtensionLoader 的类加载器加载SPI实现类
      * Gets extension loader.
      *
      * @param <T>   the type parameter
@@ -119,19 +149,23 @@ public final class ExtensionLoader<T> {
     }
     
     /**
+     * 获取SPI的默认实例对象
      * Gets default join.
      *
      * @return the default join.
      */
     public T getDefaultJoin() {
+        // 先走一遍扩展类加载流程，为了初始化 cachedDefaultName，以及 cachedClasses 缓存
         getExtensionClassesEntity();
         if (StringUtils.isBlank(cachedDefaultName)) {
             return null;
         }
+        // 根据SPI注解中指定的默认实现类别名获取实例
         return getJoin(cachedDefaultName);
     }
     
     /**
+     * 根据实现类别名获取对应类实例
      * Gets join.
      *
      * @param name the name
@@ -141,18 +175,22 @@ public final class ExtensionLoader<T> {
         if (StringUtils.isBlank(name)) {
             throw new NullPointerException("get join name is null");
         }
+        // 根据别名从缓存中获取实例持有者
         Holder<Object> objectHolder = cachedInstances.get(name);
         if (Objects.isNull(objectHolder)) {
             cachedInstances.putIfAbsent(name, new Holder<>());
             objectHolder = cachedInstances.get(name);
         }
         Object value = objectHolder.getValue();
+        // 缓存中不存在，创建
         if (Objects.isNull(value)) {
             synchronized (cachedInstances) {
                 value = objectHolder.getValue();
                 if (Objects.isNull(value)) {
+                    // 创建实例
                     createExtension(name, objectHolder);
                     value = objectHolder.getValue();
+                    // 非单例模式，移除缓存
                     if (!objectHolder.isSingleton()) {
                         Holder<Object> removeObj = cachedInstances.remove(name);
                         removeObj = null;
@@ -164,6 +202,7 @@ public final class ExtensionLoader<T> {
     }
     
     /**
+     * 获取SPI接口所有实现类的实例集合
      * get all join spi.
      *
      * @return list. joins
@@ -173,6 +212,7 @@ public final class ExtensionLoader<T> {
         if (extensionClassesEntity.isEmpty()) {
             return Collections.emptyList();
         }
+        // 所有实现类实例在缓存中都可以找到，直接走缓存
         if (Objects.equals(extensionClassesEntity.size(), cachedInstances.size())) {
             return (List<T>) this.cachedInstances.values().stream()
                     .sorted(holderComparator)
@@ -180,6 +220,7 @@ public final class ExtensionLoader<T> {
                         return e.getValue();
                     }).collect(Collectors.toList());
         }
+        // 缓存中缺失，部分走缓存，部分即时创建
         List<T> joins = new ArrayList<>();
         List<ClassEntity> classEntities = extensionClassesEntity.values().stream()
                 .sorted(classEntityComparator).collect(Collectors.toList());
@@ -189,21 +230,29 @@ public final class ExtensionLoader<T> {
         });
         return joins;
     }
-    
+
+    /**
+     * 创建实例
+     */
     @SuppressWarnings("unchecked")
     private void createExtension(final String name, final Holder<Object> holder) {
+        // 类信息
         ClassEntity classEntity = getExtensionClassesEntity().get(name);
         if (Objects.isNull(classEntity)) {
             throw new IllegalArgumentException(name + "name is error");
         }
+        // 根据 Class 对象创建实例，Class.newInstance() 调用的是无参构造器，因此SPI实现类必须有无参构造器
+        // 无参构造器导致SPI实现类中有些属性难以注入，这里可以考虑加一个注解标记SPI实现类中的指定方法用于在创建实例后进行回调做一些自定义操作
         Class<?> aClass = classEntity.getClazz();
         Object o = joinInstances.get(aClass);
         if (Objects.isNull(o)) {
             try {
+                // 单例模式，直接放入缓存留待下次直接取
                 if (classEntity.isSingleton()) {
                     joinInstances.putIfAbsent(aClass, aClass.newInstance());
                     o = joinInstances.get(aClass);
                 } else {
+                    // 原型模式，每次重新创建
                     o = aClass.newInstance();
                 }
             } catch (InstantiationException | IllegalAccessException e) {
@@ -241,7 +290,10 @@ public final class ExtensionLoader<T> {
         }
         return classes;
     }
-    
+
+    /**
+     * 加载扩展类
+     */
     private Map<String, ClassEntity> loadExtensionClass() {
         SPI annotation = clazz.getAnnotation(SPI.class);
         if (Objects.nonNull(annotation)) {
@@ -256,6 +308,7 @@ public final class ExtensionLoader<T> {
     }
     
     /**
+     * 根据类全限定名称加载 SHENYU_DIRECTORY 下的SPI配置
      * Load files under SHENYU_DIRECTORY.
      */
     private void loadDirectory(final Map<String, ClassEntity> classes) {
@@ -273,7 +326,10 @@ public final class ExtensionLoader<T> {
             LOG.error("load extension class error {}", fileName, t);
         }
     }
-    
+
+    /**
+     * 加载SPI配置下的资源文件
+     */
     private void loadResources(final Map<String, ClassEntity> classes, final URL url) throws IOException {
         try (InputStream inputStream = url.openStream()) {
             Properties properties = new Properties();
@@ -293,7 +349,10 @@ public final class ExtensionLoader<T> {
             throw new IllegalStateException("load extension resources error", e);
         }
     }
-    
+
+    /**
+     * 加载SPI实现类
+     */
     private void loadClass(final Map<String, ClassEntity> classes,
                            final String name, final String classPath) throws ClassNotFoundException {
         Class<?> subClass = Objects.nonNull(this.classLoader) ? Class.forName(classPath, true, this.classLoader) : Class.forName(classPath);
