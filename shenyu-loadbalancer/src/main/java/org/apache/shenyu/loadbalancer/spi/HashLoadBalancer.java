@@ -28,6 +28,7 @@ import org.apache.shenyu.loadbalancer.entity.Upstream;
 import org.apache.shenyu.spi.Join;
 
 /**
+ * 负载均衡器-Hash算法
  * hash algorithm impl.
  */
 @Join

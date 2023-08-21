@@ -23,6 +23,7 @@ import org.apache.shenyu.loadbalancer.spi.LoadBalancer;
 import org.apache.shenyu.spi.ExtensionLoader;
 
 /**
+ * 负载均衡器工厂
  * The type Load balance Factory.
  */
 public final class LoadBalancerFactory {

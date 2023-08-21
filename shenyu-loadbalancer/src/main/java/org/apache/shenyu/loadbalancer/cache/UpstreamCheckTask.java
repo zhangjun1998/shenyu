@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
+ * 服务健康检查
  * Health check manager for upstream servers.
  */
 public final class UpstreamCheckTask implements Runnable {

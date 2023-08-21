@@ -22,6 +22,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.shenyu.loadbalancer.entity.Upstream;
 
 /**
+ * 负载均衡器抽象类
  * The type Abstract load balancer.
  */
 public abstract class AbstractLoadBalancer implements LoadBalancer {

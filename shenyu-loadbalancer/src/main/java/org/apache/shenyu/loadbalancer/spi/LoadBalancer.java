@@ -23,6 +23,7 @@ import org.apache.shenyu.spi.SPI;
 import java.util.List;
 
 /**
+ * 负载均衡器接口，支持SPI
  * LoadBalancer interface spi.
  */
 @SPI

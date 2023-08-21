@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
+ * 上游服务缓存
  * this is upstream .
  */
 public final class UpstreamCacheManager {

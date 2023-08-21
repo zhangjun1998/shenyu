@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 
 /**
+ * 上游服务信息封装
  * this is upstream.
  */
 public final class Upstream {
