@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * 事件监听器，监听标记了 @ShenyuSpringMvcClient 注解的类
  * The type Shenyu spring mvc client event listener.
  */
 public class SpringMvcClientEventListener extends AbstractContextRefreshedEventListener<Object, ShenyuSpringMvcClient> {
@@ -79,6 +80,7 @@ public class SpringMvcClientEventListener extends AbstractContextRefreshedEventL
      */
     public SpringMvcClientEventListener(final PropertiesConfig clientConfig,
                                         final ShenyuClientRegisterRepository shenyuClientRegisterRepository) {
+        // 抽象类完成初始化
         super(clientConfig, shenyuClientRegisterRepository);
         Properties props = clientConfig.getProps();
         this.isFull = Boolean.parseBoolean(props.getProperty(ShenyuClientConstants.IS_FULL, Boolean.FALSE.toString()));

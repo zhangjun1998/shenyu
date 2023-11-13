@@ -29,9 +29,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * HTTP-SpringMVC 客户端配置
  * The type shenyu spring mvc client configuration.
  */
 @Configuration
+// 导入通用配置
 @ImportAutoConfiguration(ShenyuClientCommonBeanConfiguration.class)
 @ConditionalOnProperty(value = "shenyu.register.enabled", matchIfMissing = true, havingValue = "true")
 public class ShenyuSpringMvcClientConfiguration {
@@ -41,10 +43,11 @@ public class ShenyuSpringMvcClientConfiguration {
     }
 
     /**
+     * 创建 SpringMvcClientEventListener
      * Spring mvc client bean post processor.
      *
      * @param clientConfig                   the client config
-     * @param shenyuClientRegisterRepository the shenyu client register repository
+     * @param shenyuClientRegisterRepository the shenyu client register repository 根据配置决定SPI注入对应类型的实现
      * @return the spring mvc client bean post processor
      */
     @Bean

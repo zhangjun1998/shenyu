@@ -54,16 +54,19 @@ public class ShenyuClientRegisterEventPublisher {
         factory.addSubscribers(new ShenyuClientMetadataExecutorSubscriber(shenyuClientRegisterRepository));
         factory.addSubscribers(new ShenyuClientURIExecutorSubscriber(shenyuClientRegisterRepository));
         factory.addSubscribers(new ShenyuClientApiDocExecutorSubscriber(shenyuClientRegisterRepository));
+        // 使用 Disruptor 队列进行缓冲
         providerManage = new DisruptorProviderManage<>(factory);
         providerManage.startup();
     }
     
     /**
+     * 发布元数据事件
      * Publish event.
      *
      * @param data the data
      */
     public void publishEvent(final DataTypeParent data) {
+        // 向 Disruptor 队列发
         DisruptorProvider<DataTypeParent> provider = providerManage.getProvider();
         provider.onData(data);
     }

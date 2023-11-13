@@ -94,6 +94,7 @@ public abstract class AbstractContextRefreshedEventListener<T, A extends Annotat
      */
     public AbstractContextRefreshedEventListener(final PropertiesConfig clientConfig,
                                                  final ShenyuClientRegisterRepository shenyuClientRegisterRepository) {
+        // 配置信息
         Properties props = clientConfig.getProps();
         this.appName = props.getProperty(ShenyuClientConstants.APP_NAME);
         this.contextPath = Optional.ofNullable(props.getProperty(ShenyuClientConstants.CONTEXT_PATH)).map(UriUtils::repairData).orElse("");
@@ -105,20 +106,28 @@ public abstract class AbstractContextRefreshedEventListener<T, A extends Annotat
         this.ipAndPort = props.getProperty(ShenyuClientConstants.IP_PORT);
         this.host = props.getProperty(ShenyuClientConstants.HOST);
         this.port = props.getProperty(ShenyuClientConstants.PORT);
+        // 启动事件发布器
         publisher.start(shenyuClientRegisterRepository);
     }
 
+    /**
+     * 监听上下文刷新事件
+     */
     @Override
     public void onApplicationEvent(@NonNull final ContextRefreshedEvent event) {
         final ApplicationContext context = event.getApplicationContext();
+        // 获取服务中需要网关进行RPC调用的类
         Map<String, T> beans = getBeans(context);
         if (MapUtils.isEmpty(beans)) {
             return;
         }
+        // 保证该方法只执行一次
         if (!registered.compareAndSet(false, true)) {
             return;
         }
+        // 构造URI数据并注册
         publisher.publishEvent(buildURIRegisterDTO(context, beans));
+        // 构造元数据并注册
         beans.forEach(this::handle);
         Map<String, Object> apiModules = context.getBeansWithAnnotation(ApiModule.class);
         apiModules.forEach((k, v) -> {
@@ -196,13 +205,16 @@ public abstract class AbstractContextRefreshedEventListener<T, A extends Annotat
     
     protected void handle(final String beanName, final T bean) {
         Class<?> clazz = getCorrectedClass(bean);
+        // 获取对应的客户端注解
         final A beanShenyuClient = AnnotatedElementUtils.findMergedAnnotation(clazz, getAnnotationType());
+        // 根据bean获取path
         final String superPath = buildApiSuperPath(clazz, beanShenyuClient);
         // Compatible with previous versions
         if (Objects.nonNull(beanShenyuClient) && superPath.contains("*")) {
             handleClass(clazz, bean, beanShenyuClient, superPath);
             return;
         }
+        //获取当前bean所有方法并注册符合条件的方法
         final Method[] methods = ReflectionUtils.getUniqueDeclaredMethods(clazz);
         for (Method method : methods) {
             handleMethod(bean, clazz, beanShenyuClient, method, superPath);
@@ -226,7 +238,7 @@ public abstract class AbstractContextRefreshedEventListener<T, A extends Annotat
                                final String superPath) {
         publisher.publishEvent(buildMetaDataDTO(bean, beanShenyuClient, pathJoin(contextPath, superPath), clazz, null));
     }
-    
+
     protected void handleMethod(final T bean,
                                 final Class<?> clazz,
                                 @Nullable final A beanShenyuClient,
@@ -234,6 +246,7 @@ public abstract class AbstractContextRefreshedEventListener<T, A extends Annotat
                                 final String superPath) {
         A methodShenyuClient = AnnotatedElementUtils.findMergedAnnotation(method, getAnnotationType());
         if (Objects.nonNull(methodShenyuClient)) {
+            // 构建元数据，发布事件
             publisher.publishEvent(buildMetaDataDTO(bean, methodShenyuClient, buildApiPath(method, superPath, methodShenyuClient), clazz, method));
         }
     }

@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Configuration;
 public class ShenyuClientCommonBeanConfiguration {
     
     /**
+     * 根据配置使用工厂类通过SPI加载注册类
      * Register the register repository for http client bean post processor.
      *
      * @param config the config
